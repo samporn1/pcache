@@ -16,7 +16,7 @@ export class Home extends Component {
   readImagesFrom () {
     const { readImagesFromSite } = this.state
     const { history } = this.props
-    history.push('/readImages?site=' + readImagesFromSite)
+    history.push('/define-set?site=' + readImagesFromSite)
   }
 
   render () {
