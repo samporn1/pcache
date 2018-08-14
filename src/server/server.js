@@ -12,11 +12,6 @@ app.use((req, _, next) => {
   next()
 })
 
-app.get('/', async (req, res) => {
-  const template = await fs.readFile('./src/app/build/index.html')
-  res.set('Content-Type', 'text/html')
-  res.send(template)
-})
 
 app.get('/*.jpeg', async (req, res) => {
   res.set('Content-Type', 'image/jpeg')
@@ -118,7 +113,13 @@ const readUrl = async (setName, { url, filename }) => {
   }
 }
 
-app.use('/', express.static('./src/app/build'))
+app.use('/static', express.static('./src/app/build/static'))
+
+app.get('*', async (req, res) => {
+  const template = await fs.readFile('./src/app/build/index.html')
+  res.set('Content-Type', 'text/html')
+  res.send(template)
+})
 
 app.listen(8090)
 
