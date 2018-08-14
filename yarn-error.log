@@ -21,7 +21,7 @@ npm manifest:
     "author": "SamP <samporn1@gmail.com>",
     "license": "MIT",
     "scripts": {
-      "dev": "nodemon src/server/server.js"
+      "dev": "nodemon src/server/server.js --config nodemon.json"
     },
     "proxyX": {
       "/api/*": "http://localhost:8090/"

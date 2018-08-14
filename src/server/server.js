@@ -12,9 +12,10 @@ app.use((req, _, next) => {
   next()
 })
 
-app.get('/', (req, res) => {
-  const template = fs.readFile('./index.html')
-  res.send()
+app.get('/', async (req, res) => {
+  const template = await fs.readFile('./src/app/build/index.html')
+  res.set('Content-Type', 'text/html')
+  res.send(template)
 })
 
 app.get('/*.jpeg', async (req, res) => {
@@ -43,7 +44,6 @@ app.get('/test', (req, res) => {
 
 app.get('/api/sets', async (req, res) => {
   const content = await fs.readdir('./sets')
-
   res.json(content)
 })
 
@@ -117,6 +117,8 @@ const readUrl = async (setName, { url, filename }) => {
     throw `Error reading ${url}`
   }
 }
+
+app.use('/', express.static('./src/app/build'))
 
 app.listen(8090)
 
