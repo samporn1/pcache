@@ -1,0 +1,36 @@
+.view-images {
+  display: flex;
+  overflow-y: hidden;
+  width: 100vw;
+  overflow-x: auto;
+
+}
+
+.view-image  {
+  height: 100px;
+  width: 100px;
+  margin: 2px;
+}
+
+.view-image img{
+  max-height: 100px;
+  width: 100px;
+}
+
+.mainImage {
+  flex: 1 1;
+}
+
+.mainImage img {
+  max-height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.view-set-main {
+  height: 100vh;
+  overflow-y: hidden;
+  display: grid;
+  grid-template-rows: 60px 118px auto;
+  text-align: center;
+}
