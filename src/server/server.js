@@ -120,7 +120,12 @@ app.get('*', async (req, res) => {
   res.send(template)
 })
 
-app.listen(8090)
+const port = parseInt(process.env.PORT || '8090')
+const address = process.env.address || '127.0.0.1'
+app.listen(port, address, e => {
+  if (e) console.error(`Error listening on ${address}:${port}`, e)
+  else console.log("To feel the magic go to port", port, app.settings.env)
+})
 
 function clean (obj) {
   var cache = new Map()
