@@ -14,20 +14,25 @@ export class DefineSet extends Component {
 
     this.state = {
       filter: '',
+      defaultNamePattern: `\${i5}_\${n}`,
       setName,
-      site
     }
   }
 
+
   // com\/([a-z0-9-]+)     ${1}
   calcFileName (url, host, i) {
+    const pad = (n, i) => `0000000000${i}`.substr(n)
+
     try {
+      const namePattern = host.namePattern || this.state.defaultNamePattern
+
       const regexp = new RegExp(host.nameRegex)
       const matches = url.match(regexp)
       const pathname = new URL(url).pathname.replace(/\/?.*\//, '')
-      const name = host.namePattern
+      const name = namePattern
         .replace(/\${([0-9]+)}/g, (_, n) => matches[parseInt(n, 10)])
-        .replace(/\${i}/g, i)
+        .replace(/\${i([0-9]*)}/g, (_, n) => pad(parseInt(n||'0', 10), i))
         .replace(/\${n}/g, pathname)
 
       return name // { host, matches, name }
@@ -47,22 +52,35 @@ export class DefineSet extends Component {
     }))
   }
 
-  async componentWillMount () {
-    const { site } = this.state
-    const url = `/api/readImages?site=${site}`
+  componentWillMount () {
+    this.readData()
+  }
+
+  componentDidUpdate () {
+    this.readData()
+  }
+
+  async readData () {
+    const { selector, site, method, mdata, npage, transform } = queryString.parse(this.props.location.search)
+    const search = queryString.stringify({ selector, site, method, mdata, npage, transform })
+
+    const url = `/api/readImages?${search}`
+
+    if (this.currentUrl === url) return
+
     const allImages = await fetch(url).then(r => r.json())
-    const rawImages = allImages.map(url => ({
-      url
-    }))
+    const rawImages = allImages.map(url => ({ url }))
     const selectedImages = allImages
     const selectedHosts = this.readHosts(allImages)
     const hosts = selectedHosts.map(host => ({
       host,
-      nameRegex: 'com/([a-z0-9-]+)',
-      namePattern: `\${i}`
+      nameRegex: '',
+      namePattern: '',
     }))
     const images = this.calcFileNames(rawImages, hosts)
-    this.setState({ images, selectedImages, hosts, selectedHosts })
+    this.setState({ images, selectedImages, hosts, selectedHosts }, () => {
+      this.currentUrl = url
+    })
   }
 
   add (list, item) {
@@ -131,8 +149,20 @@ export class DefineSet extends Component {
       filter,
       hosts,
       selectedHosts,
-      stateError
+      stateError,
+      defaultNamePattern,
     } = this.state
+    const { history, location } = this.props
+    const { site, selector='img', method = 'attrib', mdata = 'src', npage, transform } = queryString.parse(location.search)
+
+    const setSearch = val => {
+      const parsed = queryString.parse(location.search);
+      const mixed = {...parsed, ...val}
+      const search = queryString.stringify(mixed)
+      const full = `${location.pathname}?${search}${location.hash ? `#${location.hash}` : '' }`
+      history.push(full)
+    }
+
 
     const [filterRegex, filterError] = (() => {
       if (!filter.length) return [null, null]
@@ -154,6 +184,8 @@ export class DefineSet extends Component {
     const body = {
       def: {
         filter,
+        defaultNamePattern,
+        setup: { site, selector, method, mdata, npage, transform },
         hosts: hosts.map(host => ({
           ...host,
           chosen: selectedHosts.includes(host.host)
@@ -166,6 +198,48 @@ export class DefineSet extends Component {
       <div className='pageRoot'>
         <header>
           <label className='topText'>
+            <p>Site:</p>
+            <input
+              value={site}
+              onChange={e => setSearch({ site: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>Selector:</p>
+            <input
+              value={selector}
+              onChange={e => setSearch({ selector: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>Method:</p>
+            <input
+              value={method}
+              onChange={e => setSearch({ method: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>MData:</p>
+            <input
+              value={mdata}
+              onChange={e => setSearch({ mdata: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>Next page:</p>
+            <input
+              value={npage}
+              onChange={e => setSearch({ npage: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>Transform:</p>
+            <input
+              value={transform}
+              onChange={e => setSearch({ transform: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
             <p>Set name:</p>
             <input
               value={setName}
@@ -177,6 +251,13 @@ export class DefineSet extends Component {
             <input
               value={filter}
               onChange={e => this.setState({ filter: e.target.value })}
+            />
+          </label>
+          <label className='topText'>
+            <p>Default name:</p>
+            <input
+              value={defaultNamePattern}
+              onChange={e => this.setState({ defaultNamePattern: e.target.value })}
             />
           </label>
           <fieldset>

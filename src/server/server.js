@@ -65,17 +65,58 @@ app.get('/api/sets/:set/:image', async (req, res) => {
 })
 
 app.get('/api/readImages', async (req, res) => {
-  const { site } = req.query
+  const { site, selector = 'img', method = 'attrib', mdata = 'src', npage = '', transform } = req.query
+  // console.log(' { site, selector, method, mdata }:',  { site, selector, method, mdata })
+  const mapF = (() => {
+    switch(method) {
 
-  const html = await fetch(site).then(r => r.text())
-  // const html = `<div><img src="cheese.com"></div>`
-  const $ = cheerio.load(html)
-  const srcList = $('img').map((_, el) => el.attribs.src).get()
-  const images = srcList.map(x => new URL(x, site).toString())
-  res.json(images)
+      case 'attrib':
+      default:
+        return (_, el) => el.attribs[mdata]
+    }
+  })()
+  try {
+    // a.data-page["next"]->href
+    let allImages = []
+    let pageUrl = site
+    let pages = 20
+    do {
+      const html = await fetch(pageUrl).then(r => r.text())
+      // const html = `<div><img src="cheese.com"></div>`
+      const $ = cheerio.load(html)
+      const srcList = $(selector).map(mapF).get()
+      const images = srcList.map(x => new URL(x, site).toString())
+      allImages = [...allImages, ...images]
+
+      const [nextPageSelector, nextPageVal] = npage.split('->')
+      pageUrl = null
+
+      if (nextPageSelector && nextPageVal) {
+        const nextPage = $(nextPageSelector).map((_, el) => el.attribs[nextPageVal]).get()[0]
+        console.log('nextPage:', nextPage)
+        pageUrl = nextPage
+      }
+      pages--
+
+    } while (pageUrl && pages > 0)
+
+    if (transform) {
+      const [search, replaceValue, flags] = transform.split('|')
+      try {
+        const searchValue = new RegExp(search, flags)
+        allImages = allImages.map(x => x.replace(searchValue, replaceValue))
+      } catch (e) {
+
+      }
+    }
+
+    res.json(allImages)
+  } catch (e) {
+    res.json([])
+  }
 })
 
-app.put('/api/sets/:set', bodyParser.json(), async (req, res) => {
+app.put('/api/sets/:set', bodyParser.json({limit: '1000kb'}), async (req, res) => {
   const { set: setName } = req.params
   console.log('setName:', setName)
   const { images, def: { filter, hosts } } = req.body

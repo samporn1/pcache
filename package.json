@@ -8,9 +8,6 @@
     "dev": "nodemon src/server/server.js --config nodemon.json",
     "start": "NODE_ENV=production forever src/server/server.js"
   },
-  "proxyX": {
-    "/api/*": "http://localhost:8090/"
-  },
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "express": "^4.16.3",
