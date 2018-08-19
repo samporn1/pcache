@@ -152,14 +152,15 @@ export class DefineSet extends Component {
 
   componentDidMount() {
     console.log('this.imageSizes:', this.imageSizes)
-
-    this.imageSizes.forEach(({img, span}) => {
-      const image = new Image();
-      image.addEventListener('load', () => {
-        span.innerHTML = `${image.width}x${image.height}`
+    if (Array.isArray(this.imageSizes)) {
+      this.imageSizes.forEach(({img, span}) => {
+        const image = new Image();
+        image.addEventListener('load', () => {
+          span.innerHTML = `${image.width}x${image.height}`
+        })
+        image.src = img.src
       })
-      image.src = img.src
-    })
+    }
   }
 
   render () {
