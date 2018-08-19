@@ -175,10 +175,18 @@ export class DefineSet extends Component {
 
     const errorMessage = filterError || stateError
 
-    const hostMatches = i => selectedHosts.includes(new URL(i).host)
+    const makeUrl = x => {
+      try {
+        return new URL(x)
+      } catch (error) {
+        return {}
+      }
+    }
 
+    const hostMatches = i => selectedHosts.includes(makeUrl(i).host)
+    
     const selectedResult = filterRegex
-      ? images.filter(x => filterRegex.test(x)).filter(hostMatches)
+      ? selectedImages.filter(x => filterRegex.test(x)).filter(hostMatches)
       : selectedImages.filter(hostMatches)
 
     const body = {
