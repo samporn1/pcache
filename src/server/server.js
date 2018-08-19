@@ -110,7 +110,7 @@ app.get('/api/readImages', async (req, res) => {
       }
     }
 
-    res.json(allImages)
+    res.json([...new Set(allImages)])
   } catch (e) {
     res.json([])
   }
