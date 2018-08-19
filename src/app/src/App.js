@@ -13,7 +13,7 @@ class App extends Component {
       <BrowserRouter>
         <div>
           <Route path='/' exact component={Home} />
-          <Route path='/define-set' component={DefineSet} />
+          <Route path='/define-set' render={(props) => <DefineSet {...props} {...this.props}/> } />
           <Route path='/set/:setName' exact component={ViewSet} />
           <Route path='/set/:setName/:index' exact component={ViewSet} />
         </div>

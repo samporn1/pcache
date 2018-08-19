@@ -2,30 +2,15 @@ import React, { Component } from 'react'
 import queryString from 'query-string'
 
 export class DefineSet extends Component {
-  constructor (props) {
-    super(props)
-    const search = queryString.parse(props.location.search)
-    const { site } = search
-
-    const setName = site
-      .replace(/https?:\/\//i, '')
-      .replace(/[/.:]/gi, '-')
-      .replace(/![a-z]/gi, '')
-
-    this.state = {
-      filter: '',
-      defaultNamePattern: `\${i5}_\${n}`,
-      setName,
-    }
-  }
-
-
+  // constructor (props) {
+  //   super(props)
+  // }
   // com\/([a-z0-9-]+)     ${1}
-  calcFileName (url, host, i) {
+  calcFileName (url, host, i, defaultNamePattern) {
     const pad = (n, i) => `0000000000${i}`.substr(n)
 
     try {
-      const namePattern = host.namePattern || this.state.defaultNamePattern
+      const namePattern = host.namePattern || defaultNamePattern
 
       const regexp = new RegExp(host.nameRegex)
       const matches = url.match(regexp)
@@ -41,19 +26,36 @@ export class DefineSet extends Component {
     }
   }
 
-  calcFileNames (images, hosts) {
+  calcFileNames (images, hosts, defaultNamePattern) {
     return images.map((img, i) => ({
       ...img,
       filename: this.calcFileName(
         img.url,
         hosts.find(x => x.host === new URL(img.url).host),
-        i + 1
+        i + 1,
+        defaultNamePattern
       )
     }))
   }
 
   componentWillMount () {
-    this.readData()
+    const {location} = this.props
+    const search = queryString.parse(location.search)
+    const { site } = search
+
+    const setName = site
+      .replace(/https?:\/\//i, '')
+      .replace(/[/.:]/gi, '-')
+      .replace(/![a-z]/gi, '')
+
+    this.props.setExternalState({
+      filter: this.props.externalState.filter || '',
+      defaultNamePattern: this.props.externalState.defaultNamePattern || `\${i5}_\${n}`,
+      setName,
+    }, () => {
+      this.readData()
+    })
+
   }
 
   componentDidUpdate () {
@@ -77,8 +79,9 @@ export class DefineSet extends Component {
       nameRegex: '',
       namePattern: '',
     }))
-    const images = this.calcFileNames(rawImages, hosts)
-    this.setState({ images, selectedImages, hosts, selectedHosts }, () => {
+    const {defaultNamePattern} = this.props.externalState
+    const images = this.calcFileNames(rawImages, hosts, defaultNamePattern)
+    this.props.setExternalState({ images, selectedImages, hosts, selectedHosts }, () => {
       this.currentUrl = url
     })
   }
@@ -86,13 +89,13 @@ export class DefineSet extends Component {
   add (list, item) {
     const [key, value] = Object.entries(list)[0]
     const newValue = [...new Set(value).add(item)]
-    this.setState({ [key]: newValue })
+    this.props.setExternalState({ [key]: newValue })
   }
 
   remove (list, item) {
     const [key, value] = Object.entries(list)[0]
     const newValue = value.filter(x => x !== item)
-    this.setState({ [key]: newValue })
+    this.props.setExternalState({ [key]: newValue })
   }
 
   readHosts (images) {
@@ -100,7 +103,7 @@ export class DefineSet extends Component {
   }
 
   go (setName, body) {
-    this.setState(
+    this.props.setExternalState(
       {
         working: true
       },
@@ -114,33 +117,53 @@ export class DefineSet extends Component {
           body: JSON.stringify(body)
         })
         if (r.ok) {
-          // this.props.history.push('/viewSet/' + this.state.setName)
+          // this.props.history.push('/viewSet/' + this.props.externalState.setName)
         } else {
           const err = await r.text()
-          this.setState({ stateError: err })
+          this.props.setExternalState({ stateError: err })
         }
       }
     )
   }
 
   setHostRegex (host, newVal) {
-    const newHosts = this.state.hosts.map(x => ({ ...x }))
+    const newHosts = this.props.externalState.hosts.map(x => ({ ...x }))
     const match = newHosts.find(x => x.host === host)
     match.nameRegex = newVal
-    const images = this.calcFileNames(this.state.images, newHosts)
-    this.setState({ hosts: newHosts, images })
+    const {images, defaultNamePattern} = this.props.externalState
+    const newImages = this.calcFileNames(images, newHosts, defaultNamePattern)
+    this.props.setExternalState({ hosts: newHosts, images: newImages })
   }
 
   setHostPattern (host, newVal) {
-    const newHosts = this.state.hosts.map(x => ({ ...x }))
+    const newHosts = this.props.externalState.hosts.map(x => ({ ...x }))
     const match = newHosts.find(x => x.host === host)
     match.namePattern = newVal
-    const images = this.calcFileNames(this.state.images, newHosts)
-    this.setState({ hosts: newHosts, images })
+    const {images, defaultNamePattern} = this.props.externalState
+    const newImages = this.calcFileNames(images, newHosts, defaultNamePattern)
+    this.props.setExternalState({ hosts: newHosts, images: newImages })
+  }
+
+  setDefaultNamePattern (defaultNamePattern) {
+    const {images, hosts} = this.props.externalState
+    const newImages = this.calcFileNames(images, hosts, defaultNamePattern)
+    this.props.setExternalState({ defaultNamePattern, images: newImages })
+  }
+
+  componentDidMount() {
+    console.log('this.imageSizes:', this.imageSizes)
+
+    this.imageSizes.forEach(({img, span}) => {
+      const image = new Image();
+      image.addEventListener('load', () => {
+        span.innerHTML = `${image.width}x${image.height}`
+      })
+      image.src = img.src
+    })
   }
 
   render () {
-    const { images } = this.state
+    const { images } = this.props.externalState
     if (!images) return <p>Reading...</p>
 
     const {
@@ -151,7 +174,7 @@ export class DefineSet extends Component {
       selectedHosts,
       stateError,
       defaultNamePattern,
-    } = this.state
+    } = this.props.externalState
     const { history, location } = this.props
     const { site, selector='img', method = 'attrib', mdata = 'src', npage, transform } = queryString.parse(location.search)
 
@@ -184,13 +207,14 @@ export class DefineSet extends Component {
     }
 
     const hostMatches = i => selectedHosts.includes(makeUrl(i).host)
-    
+
     const selectedResult = filterRegex
       ? selectedImages.filter(x => filterRegex.test(x)).filter(hostMatches)
       : selectedImages.filter(hostMatches)
 
     const body = {
       def: {
+        site,
         filter,
         defaultNamePattern,
         setup: { site, selector, method, mdata, npage, transform },
@@ -201,6 +225,8 @@ export class DefineSet extends Component {
       },
       images: images.filter(x => selectedResult.includes(x.url))
     }
+
+    this.imageSizes = images.map(() => ({}))
 
     return (
       <div className='pageRoot'>
@@ -243,7 +269,7 @@ export class DefineSet extends Component {
           <label className='topText'>
             <p>Transform:</p>
             <input
-              value={transform}
+              value={transform || ''}
               onChange={e => setSearch({ transform: e.target.value })}
             />
           </label>
@@ -251,21 +277,21 @@ export class DefineSet extends Component {
             <p>Set name:</p>
             <input
               value={setName}
-              onChange={e => this.setState({ setName: e.target.value })}
+              onChange={e => this.props.setExternalState({ setName: e.target.value })}
             />
           </label>
           <label className='topText'>
             <p>Filter:</p>
             <input
               value={filter}
-              onChange={e => this.setState({ filter: e.target.value })}
+              onChange={e => this.props.setExternalState({ filter: e.target.value })}
             />
           </label>
           <label className='topText'>
             <p>Default name:</p>
             <input
               value={defaultNamePattern}
-              onChange={e => this.setState({ defaultNamePattern: e.target.value })}
+              onChange={e => this.setDefaultNamePattern(e.target.value )}
             />
           </label>
           <fieldset>
@@ -307,7 +333,7 @@ export class DefineSet extends Component {
         </header>
         <main>
           <ul className='imageGrid'>
-            {images.map(img => (
+            {images.map((img, i) => (
               <li
                 key={img.url}
                 className={selectedResult.includes(img.url) ? 'in' : 'out'}
@@ -315,7 +341,7 @@ export class DefineSet extends Component {
                 <div>In: {selectedResult.includes(img.url) ? '✓' : '✗'}</div>
                 <div>{img.filename}</div>
                 <div className='imageGrid-container'>
-                  <img src={img.url} alt='' />
+                  <img src={img.url} alt='' ref={el => this.imageSizes[i].img = el} />
                 </div>
                 <input
                   type='checkbox'
@@ -326,6 +352,9 @@ export class DefineSet extends Component {
                       : this.remove({ selectedImages }, img.url)
                   }}
                 />
+                <span ref={el => this.imageSizes[i].span = el} >
+
+                </span>
               </li>
             ))}
           </ul>
