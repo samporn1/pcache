@@ -1,0 +1,24 @@
+.define-range-main {
+
+}
+
+.define-range-main textarea{
+  width: calc(100% - 6px);
+  padding: 0;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.matches {
+  display: flex;
+}
+
+.matches > *{
+  margin: 8px;
+}
+
+.preview-image {
+  max-height: 50px;
+  max-width: 50px;
+}

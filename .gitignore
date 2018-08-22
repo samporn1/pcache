@@ -2,3 +2,4 @@ node_modules/
 sets/
 gitenv.sh
 yarn-error.log
+data/

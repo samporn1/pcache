@@ -3,7 +3,7 @@
   overflow-y: hidden;
   width: 100vw;
   overflow-x: auto;
-
+  height: 100px;
 }
 
 .view-image  {
@@ -14,7 +14,7 @@
 
 .view-image img{
   max-height: 100px;
-  width: 100px;
+  min-width: 100px;
 }
 
 .mainImage {
@@ -23,13 +23,13 @@
 
 .mainImage img {
   max-height: 100%;
-  width: 100%;
+  max-width: 100%;
   object-fit: contain;
 }
 
 .view-set-main {
-  height: 100vh;
-  overflow-y: hidden;
+  xheight: 100vh;
+  xoverflow-y: hidden;
   display: grid;
   grid-template-rows: 60px 118px auto;
   text-align: center;

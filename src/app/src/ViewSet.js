@@ -22,12 +22,20 @@ export class ViewSet extends Component {
 
     if (!set) return <div>Loading...</div>
 
-    const { images } = set
+    console.log('set:', set)
+    const { content, images = [] } = set
     const mainImage = images[index || 0]
 
     return (
       <main className='view-set-main'>
         <h1>View</h1>
+        {content && <ul>
+          {content.map(cont => <li>
+            <Link to={`/set/${setName}$${cont}`}>
+              {cont}
+            </Link>
+          </li>)}
+        </ul>}
         <div className='view-images'>
           {images.map((src, i) => (
             <div key={src} className='view-image'>

@@ -4,6 +4,7 @@ const fs = require('fs-extra')
 const fetch = require('node-fetch')
 const cheerio = require('cheerio')
 const { URL } = require('url')
+const uuidv1 = require('uuid/v1');
 
 const app = express()
 
@@ -41,21 +42,37 @@ app.get('/api/sets', async (req, res) => {
   res.json(content)
 })
 
+async function list(path) {
+  try {
+    return await fs.readdir(path)
+  } catch (e) {
+    return []
+  }
+}
+
+async function readJson(path) {
+  try {
+    return JSON.parse(await fs.readFile(path, 'utf8'))
+  } catch (e) {
+    return null
+  }
+}
+
 app.get('/api/sets/:set', async (req, res) => {
   const { set } = req.params
-  try {
-    const images = await fs.readdir(`./sets/${set}/images`)
-    const def = JSON.parse(await fs.readFile(`./sets/${set}/def.json`, 'utf8'))
-    res.json({ images, def })
-  } catch (e) {
-    res.status(500).json(e)
-  }
+  const sets = set.replace(/\$/g, '/')
+
+  const content =(await list(`./sets/${sets}`)).filter(x => x !== 'images')
+  const images = await list(`./sets/${sets}/images`)
+  const def = await readJson(`./sets/${sets}/def.json`)
+
+  res.json({ content, images, def })
 })
 
 app.get('/api/sets/:set/:image', async (req, res) => {
   const { set, image } = req.params
-  console.log('image:', image)
-  const path = `./sets/${set}/images/${image}`
+  const sets = set.replace(/\$/g, '/')
+  const path = `./sets/${sets}/images/${image}`
   try {
     res.set('Content-Type', 'image')
     res.send(await fs.readFile(path))
@@ -141,7 +158,63 @@ app.put('/api/sets/:set', bodyParser.json({limit: '1000kb'}), async (req, res) =
   }
 })
 
-const readUrl = async (setName, { url, filename }) => {
+app.get('/api/downloads', async (req, res) => {
+  const downloads = JSON.parse(await fs.readFile('./data/downloads.json', 'utf8'))
+  res.json(downloads)
+})
+
+app.post('/api/downloads', bodyParser.json({limit: '1000kb'}), async (req, res) => {
+  const {state, urls} = req.body
+  const { set } = state
+  const downloads = urls.map(u => ({
+    id: uuidv1(),
+    url: u.url,
+    set,
+    name: u.name,
+    state: 'paused',
+  }))
+  console.log('downloads:', downloads)
+
+  let newDownloads
+  try {
+    const existig = JSON.parse(await fs.readFile('./data/downloads.json', 'utf8'))
+    const existigUrls = existig.map(x => x.url)
+    const newOnes = downloads.filter(x => !existigUrls.includes(x.url))
+
+
+    newDownloads = [...existig, ...newOnes]
+  } catch (e) {
+    newDownloads = [...downloads]
+  }
+  await fs.writeFile('./data/downloads.json', JSON.stringify(newDownloads, null, '  '))
+
+  res.send('Done')
+})
+
+app.patch('/api/downloads/:id', bodyParser.json({limit: '1000kb'}), async (req, res) => {
+  const {state} = req.body
+  const {id} = req.params
+
+  const existig = JSON.parse(await fs.readFile('./data/downloads.json', 'utf8'))
+  const download = existig.find(x => x.id === id)
+
+  if (download) {
+    download.state = state
+    await fs.writeFile('./data/downloads.json', JSON.stringify(existig, null, '  '))
+    await fs.ensureDir(`./sets/${download.set}/images`)
+
+    await readUrl(download.set, {
+      url: download.url,
+      filename: download.name,
+    })
+
+    res.json(download)
+  } else {
+    res.status(404).json(null)
+  }
+})
+
+const readUrl = async (setName, { url, filename }, ) => {
   let r = await fetch(url)
   if (r.ok) {
     let content = await r.buffer()

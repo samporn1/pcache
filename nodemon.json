@@ -1,6 +1,8 @@
 {
-  "verbose": false,
+  "verbose": true,
   "ignore": [
-    "sets"
+    "sets",
+    "downloads",
+    "data"
   ]
 }

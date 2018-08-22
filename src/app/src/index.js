@@ -8,27 +8,32 @@ import registerServiceWorker from './registerServiceWorker'
 class AppState extends React.Component {
   constructor(props) {
     super(props)
-    try {
-      const json = sessionStorage.getItem('externalState')
-      this.state = JSON.parse(json) || {}
-    } catch (e) {
-      console.log('e:', e)
-      this.state = {}
-    }
-  }
-
-  setExternalState (newState, done) {
-    this.setState(newState, () => {
+    this.state = {}
+    for(let i=0; i<sessionStorage.length; i++) {
+      let key = sessionStorage.key(i)
       try {
-        const json = JSON.stringify(this.state)
-        sessionStorage.setItem('externalState', json)
+        const json = sessionStorage.getItem(key)
+        this.state[key] = JSON.parse(json) || {}
       } catch (e) {
         console.log('e:', e)
       }
+    }
+  }
 
-      if (typeof done === 'function') {done()}
-    })
+  setExternalState (name) {
+    return (state, done) => {
+      const newState = {...this.state[name], ...state}
+      this.setState({[name]: newState}, () => {
+        try {
+          const json = JSON.stringify(newState)
+          sessionStorage.setItem(name, json)
+        } catch (e) {
+          console.log('e:', e)
+        }
 
+        if (typeof done === 'function') {done()}
+      })
+    }
   }
 
   render() {
