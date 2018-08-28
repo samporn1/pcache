@@ -260,14 +260,14 @@ export class DefineSet extends Component {
   }
 
   render() {
-    const images = [...this.props.externalState.images];
+    const images = [...(this.props.externalState.images || [])];
     if (!images) return <p>Reading...</p>;
 
     const {
-      selectedImages,
+      selectedImages = [],
       setName,
-      filter,
-      hosts,
+      filter = '',
+      hosts = [],
       selectedHosts,
       stateError,
       defaultNamePattern,
