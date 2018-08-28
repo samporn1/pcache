@@ -1,63 +1,9 @@
-
-.topText {
-  display: flex;
-}
-
-.topText p {
-  margin: 0;
-  margin-left: 8px;
-  flex: 0 100px;
-}
-
-.topText input {
-  flex: 1;
-  margin-left: 8px;
-  margin-right: 8px;
-}
-
-.imageGrid {
-  display: flex;
-  padding: 0;
-  margin: 0;
-}
-
-
-.imageGrid li {
-  list-style: none;
-  padding: 0;
-  margin: 8px;
-  border: 1px solid #dedede;
-}
-
-.imageGrid .imageGrid-container {
-  height: 100px;
-  width: 100px;
-}
-
-.imageGrid .imageGrid-container img {
-  max-height: 100px;
-  width: 100px;
-}
-
 .errorMessage {
   color: red;
 }
 
-.hostList {
-  display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  column-gap: 8px;
-}
-
-.hostList label {
-  white-space: nowrap
-}
-
-.hostList input[type=text] {
-  width: 100%;
-}
-
-body, .root {
+body,
+.root {
   height: 100vh;
   width: 100vw;
   margin: 0;
