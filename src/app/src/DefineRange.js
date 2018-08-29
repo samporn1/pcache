@@ -63,15 +63,11 @@ export class DefineRange extends Component {
       [{}]
     );
 
-    console.log('cross:', cross);
-
     cross.forEach(c => {
       c[$key] = Object.entries(c)
         .map(([k, v]) => `${k}:${v}`)
         .join('-');
     });
-
-    console.log('cross:', cross);
 
     const input = (name, display) => (
       <div>
@@ -95,7 +91,7 @@ export class DefineRange extends Component {
       };
 
       try {
-        ret.name = new URL(url).pathname.replace(/\/?.*\//, '');
+        ret.filename = new URL(url).pathname.replace(/\/?.*\//, '');
       } catch (e) {}
 
       return ret;

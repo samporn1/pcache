@@ -141,13 +141,12 @@ app.get('/api/readImages', async (req, res) => {
   }
 });
 
-app.put(
-  '/api/sets/:set',
+app.post(
+  '/api/sets',
   bodyParser.json({ limit: '1000kb' }),
   async (req, res) => {
-    const { set: setName } = req.params;
-    console.log('setName:', setName);
     const {
+      setName,
       images,
       def: { filter, hosts }
     } = req.body;
@@ -162,8 +161,14 @@ app.put(
         `${folder}/def.json`,
         JSON.stringify(req.body, null, '  ')
       );
-      for (image of images) {
-        await readUrl(setName, image);
+
+      if (req.body.download) {
+        downloads.addDownloads(setName, images);
+        console.log('images:', images);
+      } else {
+        for (image of images) {
+          await readUrl(setName, image);
+        }
       }
       res.json({ done: true });
     } catch (e) {

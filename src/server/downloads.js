@@ -3,9 +3,56 @@ const uuidv1 = require('uuid/v1');
 const fs = require('fs-extra');
 const fetch = require('node-fetch');
 
-module.exports = async app => {
-  let downloads = [];
+let downloads = [];
 
+async function addDownloads(set, urls) {
+  console.log('urls:', urls);
+  const downloadUrls = urls.map(u => ({
+    id: uuidv1(),
+    url: u.url,
+    set,
+    name: u.filename,
+    state: 'paused'
+  }));
+
+  const existigUrls = downloads.map(x => x.url);
+  for (let u of downloadUrls) {
+    const r = await fetch(u.url, {
+      method: 'HEAD'
+    });
+
+    u.rsize = r.headers.get('content-length');
+  }
+  console.log('downloadUrls:', downloadUrls);
+  const newOnes = downloadUrls.filter(x => !existigUrls.includes(x.url));
+  console.log('newOnes:', newOnes);
+
+  downloads = [...downloads, ...newOnes];
+
+  await fs.writeFile(
+    './data/downloads.json',
+    JSON.stringify(downloads, null, '  ')
+  );
+}
+
+async function getSize(download) {
+  const path = `./sets/${download.set}/images/${download.name}`;
+  try {
+    const { size } = await fs.stat(path);
+    download.size = size;
+  } catch (e) {
+    download.size = null;
+  }
+
+  if (
+    download.state === 'downloading' &&
+    `${download.size}` === `${download.rsize}`
+  ) {
+    download.state = 'done';
+  }
+}
+
+module.exports = async app => {
   app.get('/api/downloads', async (req, res) => {
     await Promise.all(
       downloads.map(async download => {
@@ -34,53 +81,12 @@ module.exports = async app => {
     async (req, res) => {
       const { state, urls } = req.body;
       const { set } = state;
-      const downloadUrls = urls.map(u => ({
-        id: uuidv1(),
-        url: u.url,
-        set,
-        name: u.name,
-        state: 'paused'
-      }));
 
-      const existigUrls = downloads.map(x => x.url);
-      for (let u of downloadUrls) {
-        const r = await fetch(u.url, {
-          method: 'HEAD'
-        });
-
-        u.rsize = r.headers.get('content-length');
-      }
-      console.log('downloadUrls:', downloadUrls);
-      const newOnes = downloadUrls.filter(x => !existigUrls.includes(x.url));
-      console.log('newOnes:', newOnes);
-
-      downloads = [...downloads, ...newOnes];
-
-      await fs.writeFile(
-        './data/downloads.json',
-        JSON.stringify(downloads, null, '  ')
-      );
+      await addDownloads(set, urls);
 
       res.send('Done');
     }
   );
-
-  async function getSize(download) {
-    const path = `./sets/${download.set}/images/${download.name}`;
-    try {
-      const { size } = await fs.stat(path);
-      download.size = size;
-    } catch (e) {
-      download.size = null;
-    }
-
-    if (
-      download.state === 'downloading' &&
-      `${download.size}` === `${download.rsize}`
-    ) {
-      download.state = 'done';
-    }
-  }
 
   app.post('/api/downloads/action/clear-complete', async (req, res) => {
     const mapped = await Promise.all(
@@ -147,8 +153,10 @@ module.exports = async app => {
   );
 
   downloads = JSON.parse(await fs.readFile('./data/downloads.json', 'utf8'));
+};
 
-  console.log('mapped:');
+module.exports.addDownloads = async (set, urls) => {
+  await addDownloads(set, urls);
 };
 
 const readUrl = async download => {

@@ -154,19 +154,19 @@ export class DefineSet extends Component {
     return [...new Set(images.map(x => new URL(x).host))];
   }
 
-  go(setName, body) {
+  go(body, download) {
     this.props.setExternalState(
       {
         working: true
       },
       async () => {
-        const url = `/api/sets/${setName}`;
+        const url = `/api/sets`;
         const r = await fetch(url, {
-          method: 'PUT',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify({ ...body, download })
         });
         if (r.ok) {
           // this.props.history.push('/viewSet/' + this.props.externalState.setName)
@@ -241,7 +241,7 @@ export class DefineSet extends Component {
           image.addEventListener('load', () => {
             span.innerHTML = `${image.width}x${image.height}`;
           });
-          image.src = img.src;
+          if (image && img) image.src = img.src;
         });
       }
     }, 10);
@@ -337,6 +337,7 @@ export class DefineSet extends Component {
           chosen: selectedHosts.includes(host.host)
         }))
       },
+      setName,
       images: images.filter(x => selectedResult.includes(x.url))
     };
 
@@ -455,6 +456,12 @@ export class DefineSet extends Component {
             </div>
           </fieldset>
         </header>
+        <input type="submit" value="Go" onClick={() => this.go(body)} />
+        <input
+          type="submit"
+          value="Download"
+          onClick={() => this.go(body, true)}
+        />
         <main>
           <ul className="imageGrid">
             {images.map((img, i) => (
@@ -484,11 +491,7 @@ export class DefineSet extends Component {
               </li>
             ))}
           </ul>
-          <input
-            type="submit"
-            value="Go"
-            onClick={() => this.go(setName, body)}
-          />
+
           {errorMessage && <div className="errorMessage">{errorMessage}</div>}
           <pre>body: {JSON.stringify(body, null, '  ')}</pre>
         </main>
