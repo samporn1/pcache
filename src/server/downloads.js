@@ -163,6 +163,7 @@ const readUrl = async download => {
   const { set, url, name } = download;
   let r = await fetch(url);
   if (r.ok) {
+    r.rsize = r.headers.get('content-length');
     let content = await r.buffer();
     const path = `./sets/${set}/images/${name}`;
     await fs.writeFile(path, content);
