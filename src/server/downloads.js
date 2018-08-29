@@ -142,8 +142,17 @@ module.exports = async app => {
         downloads = existig;
         await fs.ensureDir(`./sets/${download.set}/images`);
 
-        await readUrl(download);
-        await getSize(download);
+        try {
+          await readUrl(download);
+          await getSize(download);
+        } catch (e) {
+          download.status = 'failed';
+        }
+
+        await fs.writeFile(
+          './data/downloads.json',
+          JSON.stringify(existig, null, '  ')
+        );
 
         res.json(download);
       } else {
