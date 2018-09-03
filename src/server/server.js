@@ -103,6 +103,7 @@ app.get('/api/readImages', async (req, res) => {
     // a.data-page["next"]->href
     let allImages = [];
     let pageUrl = site;
+    let lastPage
     let pages = 20;
     do {
       const html = await fetch(pageUrl).then(r => r.text());
@@ -115,14 +116,16 @@ app.get('/api/readImages', async (req, res) => {
       allImages = [...allImages, ...images];
 
       const [nextPageSelector, nextPageVal] = npage.split('->');
+      lastPage = pageUrl
       pageUrl = null;
 
       if (nextPageSelector && nextPageVal) {
         const nextPage = $(nextPageSelector)
           .map((_, el) => el.attribs[nextPageVal])
           .get()[0];
-        console.log('nextPage:', nextPage);
-        pageUrl = nextPage;
+        const nextPageUrl = `${new URL(nextPage, lastPage)}`
+        console.log('nextPageUrl:', nextPageUrl)
+        pageUrl = nextPageUrl
       }
       pages--;
     } while (pageUrl && pages > 0);
