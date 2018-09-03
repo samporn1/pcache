@@ -13,7 +13,7 @@ export class DefineSet extends Component {
   // com\/([a-z0-9-]+)     ${1}
 
   calcFileName(url, host, i, defaultNamePattern, nameFormat) {
-    const pad = (n, i) => `0000000000${i}`.substr(n);
+    const pad = (n, i) => `0000000000${i}`.slice(-n);
 
     try {
       const namePattern = host.namePattern || defaultNamePattern;
