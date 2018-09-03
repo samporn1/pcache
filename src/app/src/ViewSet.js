@@ -16,6 +16,32 @@ export class ViewSet extends Component {
     this.setState({ set })
   }
 
+  componentDidMount() {
+    this.keydown = e => {
+      console.log('e:', e.keyCode)
+      if (e.keyCode === 37 || e.keyCode === 39) {
+        e.preventDefault()
+        const { history, match: { params: { setName, index } } } = this.props
+        const to = (parseInt(index||'0'))+ (e.keyCode === 39 ? 1 : -1)
+
+        try {
+          if (to < 0 || to >= this.state.set.images.length) {
+            return
+          }
+          const loc = `/set/${setName}/${to}`
+          history.push(loc);
+          console.log('push loc:', loc)
+        }catch(e){}
+      }
+    }
+    document.addEventListener('keydown', this.keydown )
+
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.keydown )
+  }
+
   render () {
     const { match: { params: { setName, index } } } = this.props
     const { set } = this.state
