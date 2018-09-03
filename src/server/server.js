@@ -195,6 +195,7 @@ const readUrl = async (setName, { url, filename }) => {
   }
 };
 
+app.use('/assets/sets', express.static('./sets'));
 app.use('/', express.static('./src/app/build'));
 
 app.get('*', async (req, res) => {

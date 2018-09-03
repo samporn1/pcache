@@ -66,13 +66,13 @@ export class ViewSet extends Component {
           {images.map((src, i) => (
             <div key={src} className='view-image'>
               <Link to={`/set/${setName}/${i}`}>
-                <img src={`/api/sets/${setName}/${src}`} alt={src} />
+                <img src={`/assets/sets/${setName}/images/${src}`} alt={src} />
               </Link>
             </div>
           ))}
         </div>
         <div className='mainImage'>
-          <img src={`/api/sets/${setName}/${mainImage}`} alt={mainImage} />
+          <img src={`/assets/sets/${setName}/images/${mainImage}`} alt={mainImage} />
         </div>
       </main>
     )
